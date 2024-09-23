@@ -1,0 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Sep 23 14:21:34 2024
+
+@author: Gustavo
+"""
+plotly
+streamlit
+pandas
+numpy
