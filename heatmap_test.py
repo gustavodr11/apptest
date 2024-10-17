@@ -23,8 +23,8 @@ df1["Totaal verbruik per week (kWh)"] = df1[["Verbruik maandag", "Verbruik dinsd
 # Groepeer de data op basis van Pand en coördinaat om het totale verbruik per pand te aggregeren
 df1_grouped = df1.groupby(["pand", "Latitude", "Longitude"], as_index=False)["Totaal verbruik per week (kWh)"].sum()
 
-# Maak een kaart met folium, gecentreerd op een gemiddelde locatie in Oostpoort Amsterdam
-map_center = [df1_grouped["Latitude"].mean(), df1_grouped["Longitude"].mean()]
+# Gebruik de opgegeven coördinaten als centrum voor de kaart
+map_center = [52.395762704268726, 4.789355012543267]  # Coördinaten van het midden van het terrein
 m = folium.Map(location=map_center, zoom_start=15)
 
 # Voeg energieverbruik toe aan de kaart als een heatmap
@@ -33,3 +33,4 @@ HeatMap(heat_data, radius=32, max_zoom=13).add_to(m)
 
 # Toon de heatmap in Streamlit
 st_folium(m, width=700, height=500)
+
