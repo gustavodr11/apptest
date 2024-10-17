@@ -3,46 +3,42 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
 
-# Functie om het stroomverbruik over de uren van de dag te verdelen per sector
-def verdeel_verbruik_uren_sector(dag_verbruik, werkuren, sector, openingstijd=9):
+# Functie voor het toewijzen van verbruikspatronen aan sectoren
+def verdeel_verbruik_uren(dag_verbruik, werkuren, patroon, openingstijd=9):
     urenverdeling = np.zeros(24)
     if pd.notna(werkuren) and werkuren > 0:
         werkuren = int(werkuren)
         sluitingstijd = (openingstijd + werkuren) % 24
 
-        # Verbruikspatronen per sector
-        sector_verdeling = {
-            'Vervoer en opslag': (0.7, 0.3),
-            'Houtindustrie': (0.9, 0.1),
-            'Auto industrie': (0.9, 0.1),
-            'Leidingen industrie': (0.9, 0.1),
-            'Non-ferro metalen': (0.15, 0.7, 0.15),
-            'Groothandel/hygiene': (0.5, 0.5),
-            'Voedings en genotsmiddelen': (0.9, 0.1),
-            'Drank industrie': (0.5, 0.5)
-        }
-
-        # Algemene verdeling voor sectoren met constant verbruik
-        if sector in ['Media', 'Farmaceutische industrie']:
-            urenverdeling[:] = dag_verbruik / 24
-        else:
-            patroon = sector_verdeling.get(sector, (0.9, 0.1))
-            if len(patroon) == 2:
-                urenverdeling[openingstijd:sluitingstijd] = (dag_verbruik * patroon[0]) / werkuren
-                urenverdeling[sluitingstijd:openingstijd] = (dag_verbruik * patroon[1]) / (24 - werkuren)
-            else:
-                piek_uur_start = (openingstijd + werkuren // 2 - 2) % 24
-                piek_uur_eind = (piek_uur_start + 4) % 24
-                urenverdeling[openingstijd:piek_uur_start] = (dag_verbruik * patroon[0]) / (piek_uur_start - openingstijd)
-                urenverdeling[piek_uur_start:piek_uur_eind] = (dag_verbruik * patroon[1]) / 4
-                urenverdeling[piek_uur_eind:sluitingstijd] = (dag_verbruik * patroon[2]) / (sluitingstijd - piek_uur_eind)
-
+        # Algemene verdeling op basis van patroon
+        if len(patroon) == 2:
+            urenverdeling[openingstijd:sluitingstijd] = (dag_verbruik * patroon[0]) / werkuren
+            urenverdeling[sluitingstijd:openingstijd] = (dag_verbruik * patroon[1]) / (24 - werkuren)
+        elif len(patroon) == 3:
+            piek_uur_start = (openingstijd + werkuren // 2 - 2) % 24
+            piek_uur_eind = (piek_uur_start + 4) % 24
+            urenverdeling[openingstijd:piek_uur_start] = (dag_verbruik * patroon[0]) / (piek_uur_start - openingstijd)
+            urenverdeling[piek_uur_start:piek_uur_eind] = (dag_verbruik * patroon[1]) / 4
+            urenverdeling[piek_uur_eind:sluitingstijd] = (dag_verbruik * patroon[2]) / (sluitingstijd - piek_uur_eind)
     return urenverdeling
+
+# Verbruikspatronen voor sectoren
+sector_patronen = {
+    'Vervoer en opslag': (0.7, 0.3),
+    'Houtindustrie': (0.9, 0.1),
+    'Non-ferrobedrijven': (0.9, 0.1),
+    'Groothandel/hygiene': (0.5, 0.5),
+    'Voedings en genotsmiddelen': (0.9, 0.1),
+    'Farmaceutische industrie': (1, 0),
+    'Drank industrie': (0.5, 0.5),
+    'Auto-industrie': (0.9, 0.1),
+    'Leidingen industrie': (0.9, 0.1)
+}
 
 # Lees de data in
 df = pd.read_excel("Data_verbruik_v8.xlsx")
 
-# Initialiseer een dictionary voor het verbruik per uur per sector
+# Initializeer een dictionary voor het verbruik per sector per uur
 sector_uurverbruik = {sector: np.zeros(24) for sector in df['Sector'].unique()}
 
 # Verdeel het verbruik over de uren van de dag per sector
@@ -56,11 +52,11 @@ for _, row in df.iterrows():
                             'Verbruik zondag']]
 
     sector = row['Sector']
-    openingstijd = 9
+    patroon = sector_patronen.get(sector, (0.9, 0.1))  # Val terug op een standaard patroon
 
     # Bereken het verbruik per uur voor elke dag
-    for dag, werkuren, dag_verbruik in zip(werkuren_per_dag.index, werkuren_per_dag, verbruik_per_dag):
-        sector_uurverbruik[sector] += verdeel_verbruik_uren_sector(dag_verbruik, werkuren, sector, openingstijd)
+    for werkuren, dag_verbruik in zip(werkuren_per_dag, verbruik_per_dag):
+        sector_uurverbruik[sector] += verdeel_verbruik_uren(dag_verbruik, werkuren, patroon)
 
 # Streamlit weergave met Matplotlib
 st.title('Dagverdeling van Stroomverbruik per Sector')
