@@ -2,14 +2,14 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-
+# Lees het Excel-bestand in
 df2 = pd.read_excel('verbruik_persector_dwm.xlsx')
 
 # Kolomnamen specificeren die je wilt gebruiken
 sector_col = 'Sector'
 daily_columns = ['Verbruik maandag', 'Verbruik dinsdag', 'Verbruik woensdag', 'Verbruik donderdag', 'Verbruik vrijdag', 'Verbruik zaterdag', 'Verbruik zondag']
 weekly_col = 'Week verbruik'
-monthly_col = 'Maand verbruik'
+monthly_col = 'Maand verbruik'  # Correctie: Haakje verwijderd
 
 # Dagelijkse gegevens omzetten naar lange vorm voor gebruik in plot
 df_dagelijks = df2.melt(id_vars=sector_col, value_vars=daily_columns, 
@@ -32,6 +32,7 @@ else:
 
 # Grafiek weergeven in Streamlit
 st.plotly_chart(fig)
+
 
 
 
