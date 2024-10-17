@@ -1,26 +1,36 @@
 import streamlit as st
 import pandas as pd
-import folium
-from folium.plugins import HeatMap
-from streamlit_folium import st_folium
+import plotly.express as px
 
-data = pd.read_excel("Data_verbruik_v8.xlsx")
+# Laad de data
+df1 = pd.read_excel("Data_verbruik_v8.xlsx")
 
-st.subheader("Heatmap van Energieverbruik per Pand in Oostpoort Amsterdam")
+# Streamlit layout
+st.subheader("Dagelijks Verbruik per Uur per Sector")
 
-df1 = pd.DataFrame(data)
-df1 = df1.dropna(subset=['Latitude', 'Longitude'])
+# Zorg ervoor dat er geen null waarden zijn in de kolommen die je nodig hebt
+df1 = df1.dropna(subset=['Sector', 'Werkuren maandag', 'Verbruik maandag', 'Werkuren dinsdag', 'Verbruik dinsdag'])
 
-df1["Totaal verbruik per week (kWh)"] = df1[["Verbruik maandag", "Verbruik dinsdag", "Verbruik woensdag", 
-                                           "Verbruik donderdag", "Verbruik vrijdag"]].sum(axis=1)
+# Bereken het verbruik per uur voor elke dag
+df1['Verbruik per uur maandag'] = df1['Verbruik maandag'] / df1['Werkuren maandag']
+df1['Verbruik per uur dinsdag'] = df1['Verbruik dinsdag'] / df1['Werkuren dinsdag']
+df1['Verbruik per uur woensdag'] = df1['Verbruik woensdag'] / df1['Werkuren woensdag']
+df1['Verbruik per uur donderdag'] = df1['Verbruik donderdag'] / df1['Werkuren donderdag']
+df1['Verbruik per uur vrijdag'] = df1['Verbruik vrijdag'] / df1['Werkuren vrijdag']
 
-df1_grouped = df1.groupby(["pand", "Latitude", "Longitude"], as_index=False)["Totaal verbruik per week (kWh)"].sum()
+# Zet de data in lang formaat voor Plotly
+df_melted = pd.melt(df1, 
+                    id_vars=['Sector'], 
+                    value_vars=['Verbruik per uur maandag', 'Verbruik per uur dinsdag', 
+                                'Verbruik per uur woensdag', 'Verbruik per uur donderdag', 
+                                'Verbruik per uur vrijdag'], 
+                    var_name='Dag', 
+                    value_name='Verbruik per uur')
 
-map_center = [52.395762704268726, 4.789355012543267]  # Coördinaten van het midden van het terrein
-m = folium.Map(location=map_center, zoom_start=15)
+# Maak een lijn grafiek per sector
+fig = px.line(df_melted, x='Dag', y='Verbruik per uur', color='Sector',
+              title='Dagelijks Verbruik per Uur per Sector')
 
-heat_data = [[row['Latitude'], row['Longitude'], row['Totaal verbruik per week (kWh)']] for index, row in df1_grouped.iterrows()]
-HeatMap(heat_data, radius=24, max_zoom=13).add_to(m)
-
-st_folium(m, width=700, height=500)
+# Toon de grafiek in Streamlit
+st.plotly_chart(fig)
 
