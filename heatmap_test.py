@@ -5,7 +5,7 @@ from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 
 # Laad de data
-data = pd.read_excel("Data_verbruik_v7.xlsx")
+data = pd.read_excel("Data_verbruik_v8.xlsx")
 
 # Streamlit layout
 st.title("Heatmap van Energieverbruik per Pand in Oostpoort Amsterdam")
