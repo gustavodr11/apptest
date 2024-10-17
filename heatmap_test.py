@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 
-df2 = pd.read_excel('Data_verbruik_v8.xlsx')
+df2 = pd.read_excel('verbruik_persector_dwm.xlsx')
 
 # Kolomnamen specificeren die je wilt gebruiken
 sector_col = 'Sector'
