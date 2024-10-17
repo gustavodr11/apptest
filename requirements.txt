@@ -2,3 +2,10 @@ plotly
 streamlit
 pandas
 numpy
+streamlit-option-menu
+folium
+streamlit_folium
+openpyxl
+scikit-learn
+seaborn
+geopy
