@@ -34,8 +34,9 @@ if keuze == 'Dagelijks Verbruik':
     fig = px.line(df_dagelijks, x='Dag', y='Dagelijks Verbruik', color='Sector', title=f'{keuze} per Dag per Sector', 
                   labels={'Dagelijks Verbruik': 'Verbruik (kWh)', 'Dag': 'Dag van de Week'})
 else:
-    # Staafdiagram voor wekelijkse of maandelijkse verbruik
-    fig = px.bar(df, x='Sector', y=keuze, title=f'Energieverbruik per Sector ({keuze})', labels={keuze: 'Verbruik (kWh)'})
+    # Staafdiagram voor wekelijkse of maandelijkse verbruik, met kleur per sector
+    fig = px.bar(df, x='Sector', y=keuze, color='Sector', title=f'Energieverbruik per Sector ({keuze})', 
+                 labels={keuze: 'Verbruik (kWh)'})
 
 # Grafiek weergeven in Streamlit
 st.plotly_chart(fig)
