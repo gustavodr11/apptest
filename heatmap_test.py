@@ -8,7 +8,7 @@ from streamlit_folium import st_folium
 data = pd.read_excel("Data_verbruik_v8.xlsx")
 
 # Streamlit layout
-st.title("Heatmap van Energieverbruik per Pand in Oostpoort Amsterdam")
+st.subheader("Heatmap van Energieverbruik per Pand in Oostpoort Amsterdam")
 
 # Maak een dataframe van de data
 df1 = pd.DataFrame(data)
@@ -25,7 +25,7 @@ df1_grouped = df1.groupby(["pand", "Latitude", "Longitude"], as_index=False)["To
 
 # Maak een kaart met folium, gecentreerd op een gemiddelde locatie in Oostpoort Amsterdam
 map_center = [df1_grouped["Latitude"].mean(), df1_grouped["Longitude"].mean()]
-m = folium.Map(location=map_center, zoom_start=13)
+m = folium.Map(location=map_center, zoom_start=15)
 
 # Voeg energieverbruik toe aan de kaart als een heatmap
 heat_data = [[row['Latitude'], row['Longitude'], row['Totaal verbruik per week (kWh)']] for index, row in df1_grouped.iterrows()]
