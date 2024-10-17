@@ -14,14 +14,16 @@ df_melted = df_verbruik.melt(id_vars=['Sector'],
                              var_name='Dag', 
                              value_name='Verbruik (kWh)')
 
-# Maak een lijn grafiek met Plotly
-fig = px.line(df_melted, 
-              x='Dag', 
-              y='Verbruik (kWh)', 
-              color='Sector',
-              title='Dagelijks energieverbruik per sector')
+# Maak een gestapelde staafdiagram
+fig = px.bar(df_melted, 
+             x='Dag', 
+             y='Verbruik (kWh)', 
+             color='Sector', 
+             title='Dagelijks energieverbruik per sector',
+             barmode='stack')
 
 # Weergeef de grafiek in Streamlit
 st.plotly_chart(fig)
+
 
 
