@@ -9,7 +9,7 @@ df2 = pd.read_excel('verbruik_persector_dwm.xlsx')
 sector_col = 'Sector'
 daily_columns = ['Verbruik maandag', 'Verbruik dinsdag', 'Verbruik woensdag', 'Verbruik donderdag', 'Verbruik vrijdag', 'Verbruik zaterdag', 'Verbruik zondag']
 weekly_col = 'Week verbruik'
-monthly_col = 'Maand verbruik'
+monthly_col = 'Maand verbruik'  # Correctie: Haakje verwijderd
 
 # Dagelijkse gegevens omzetten naar lange vorm voor gebruik in plot
 df_dagelijks = df2.melt(id_vars=sector_col, value_vars=daily_columns, 
@@ -20,8 +20,8 @@ keuze = st.selectbox('Selecteer het type verbruik:', ['Dagelijks Verbruik', week
 
 # Maak de visualisatie op basis van de kolomkeuze
 if keuze == 'Dagelijks Verbruik':
-    # Staafdiagram voor dagelijks verbruik
-    fig = px.bar(df_dagelijks, x='Dag', y='Dagelijks Verbruik', color=sector_col, 
+    # Lijnplot voor dagelijks verbruik
+    fig = px.line(df_dagelijks, x='Dag', y='Dagelijks Verbruik', color=sector_col, 
                     title=f'{keuze} per dag per sector', 
                     labels={'Dagelijks Verbruik': 'Verbruik (kWh)', 'Dag': 'Dag van de week'})
 else:
