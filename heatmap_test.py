@@ -1,79 +1,45 @@
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import streamlit as st
+import pandas as pd
+import plotly.express as px
 
-# Functie voor het toewijzen van verbruikspatronen aan sectoren
-def verdeel_verbruik_uren(dag_verbruik, werkuren, patroon, openingstijd=9):
-    urenverdeling = np.zeros(24)
-    if pd.notna(werkuren) and werkuren > 0:
-        werkuren = int(werkuren)
-        sluitingstijd = (openingstijd + werkuren) % 24
-
-        # Algemene verdeling op basis van patroon
-        if len(patroon) == 2:
-            urenverdeling[openingstijd:sluitingstijd] = (dag_verbruik * patroon[0]) / werkuren
-            urenverdeling[sluitingstijd:openingstijd] = (dag_verbruik * patroon[1]) / (24 - werkuren)
-        elif len(patroon) == 3:
-            piek_uur_start = (openingstijd + werkuren // 2 - 2) % 24
-            piek_uur_eind = (piek_uur_start + 4) % 24
-            urenverdeling[openingstijd:piek_uur_start] = (dag_verbruik * patroon[0]) / (piek_uur_start - openingstijd)
-            urenverdeling[piek_uur_start:piek_uur_eind] = (dag_verbruik * patroon[1]) / 4
-            urenverdeling[piek_uur_eind:sluitingstijd] = (dag_verbruik * patroon[2]) / (sluitingstijd - piek_uur_eind)
-    return urenverdeling
-
-# Verbruikspatronen voor sectoren
-sector_patronen = {
-    'Vervoer en opslag': (0.7, 0.3),
-    'Houtindustrie': (0.9, 0.1),
-    'Non-ferrobedrijven': (0.9, 0.1),
-    'Groothandel/hygiene': (0.5, 0.5),
-    'Voedings en genotsmiddelen': (0.9, 0.1),
-    'Farmaceutische industrie': (1, 0),
-    'Drank industrie': (0.5, 0.5),
-    'Auto-industrie': (0.9, 0.1),
-    'Leidingen industrie': (0.9, 0.1)
+# Fictieve data voor dagelijks, wekelijks en maandelijks energieverbruik (in kWh) per sector
+data = {
+    'Sector': ['Non-ferrobedrijven', 'Vervoer en opslag', 'Houtindustrie', 'Groothandel/hygiene', 
+               'Voedings en genotsmiddelen', 'Auto-industrie', 'Farmaceutische industrie', 
+               'Drankindustrie', 'Leidingen industrie'],
+    'Maandag': [120, 85, 90, 100, 110, 95, 130, 75, 60],
+    'Dinsdag': [125, 80, 85, 95, 105, 90, 125, 70, 65],
+    'Woensdag': [115, 75, 95, 105, 120, 100, 135, 80, 55],
+    'Donderdag': [130, 90, 100, 110, 115, 85, 140, 85, 70],
+    'Vrijdag': [135, 95, 105, 115, 125, 100, 145, 90, 75],
+    'Zaterdag': [140, 85, 110, 120, 130, 105, 150, 85, 80],
+    'Zondag': [145, 90, 115, 125, 135, 110, 155, 95, 85],
+    'Wekelijks Verbruik': [840, 595, 630, 700, 770, 665, 910, 525, 420],
+    'Maandelijks Verbruik': [3600, 2550, 2700, 3000, 3300, 2850, 3900, 2250, 1800]
 }
 
-# Lees de data in
-df = pd.read_excel("Data_verbruik_v8.xlsx")
+# DataFrame aanmaken
+df = pd.DataFrame(data)
 
-# Initializeer een dictionary voor het verbruik per sector per uur
-sector_uurverbruik = {sector: np.zeros(24) for sector in df['Sector'].unique()}
+# Dagelijkse gegevens omzetten naar lange vorm voor gebruik in plot
+df_dagelijks = df.melt(id_vars='Sector', value_vars=['Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag', 'Zondag'], 
+                       var_name='Dag', value_name='Dagelijks Verbruik')
 
-# Verdeel het verbruik over de uren van de dag per sector
-for _, row in df.iterrows():
-    werkuren_per_dag = row[['Werkuren maandag', 'Werkuren dinsdag', 'Werkuren woensdag', 
-                            'Werkuren donderdag', 'Werkuren vrijdag', 'Werkuren zaterdag', 
-                            'Werkuren zondag']]
+# Dropdownmenu voor selectie (dagelijks, wekelijks of maandelijks verbruik)
+keuze = st.selectbox('Selecteer het type verbruik:', ['Dagelijks Verbruik', 'Wekelijks Verbruik', 'Maandelijks Verbruik'])
 
-    verbruik_per_dag = row[['Verbruik maandag', 'Verbruik dinsdag', 'Verbruik woensdag', 
-                            'Verbruik donderdag', 'Verbruik vrijdag', 'Verbruik zaterdag', 
-                            'Verbruik zondag']]
+# Plot maken op basis van selectie
+if keuze == 'Dagelijks Verbruik':
+    # Lijnplot voor dagelijks verbruik
+    fig = px.line(df_dagelijks, x='Dag', y='Dagelijks Verbruik', color='Sector', title=f'{keuze} per Dag per Sector', 
+                  labels={'Dagelijks Verbruik': 'Verbruik (kWh)', 'Dag': 'Dag van de Week'})
+else:
+    # Staafdiagram voor wekelijkse of maandelijkse verbruik
+    fig = px.bar(df, x='Sector', y=keuze, title=f'Energieverbruik per Sector ({keuze})', labels={keuze: 'Verbruik (kWh)'})
 
-    sector = row['Sector']
-    patroon = sector_patronen.get(sector, (0.9, 0.1))  # Val terug op een standaard patroon
+# Grafiek weergeven in Streamlit
+st.plotly_chart(fig)
 
-    # Bereken het verbruik per uur voor elke dag
-    for werkuren, dag_verbruik in zip(werkuren_per_dag, verbruik_per_dag):
-        sector_uurverbruik[sector] += verdeel_verbruik_uren(dag_verbruik, werkuren, patroon)
-
-# Streamlit weergave met Matplotlib
-st.title('Dagverdeling van Stroomverbruik per Sector')
-
-plt.figure(figsize=(12, 8))
-for sector, uurverbruik in sector_uurverbruik.items():
-    plt.plot(range(24), uurverbruik, marker='o', label=sector)
-
-plt.title('Dagverdeling van Stroomverbruik per Sector')
-plt.xlabel('Uur van de Dag')
-plt.ylabel('Totaal Stroomverbruik (kWh)')
-plt.xticks(range(24), [f'{i}:00' for i in range(24)], rotation=45)
-plt.legend(title='Sectoren', bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.grid(True)
-plt.tight_layout()
-
-st.pyplot(plt)
 
 
 
