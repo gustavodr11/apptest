@@ -9,7 +9,7 @@ df2 = pd.read_excel('Data_verbruik_v8.xlsx')
 sector_col = 'Sector'
 daily_columns = ['Verbruik maandag', 'Verbruik dinsdag', 'Verbruik woensdag', 'Verbruik donderdag', 'Verbruik vrijdag', 'Verbruik zaterdag', 'Verbruik zondag']
 weekly_col = 'Week verbruik'
-onthly_col = 'Maand verbruik)'
+monthly_col = 'Maand verbruik)'
 
 # Dagelijkse gegevens omzetten naar lange vorm voor gebruik in plot
 df_dagelijks = df2.melt(id_vars=sector_col, value_vars=daily_columns, 
