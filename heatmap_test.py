@@ -29,7 +29,7 @@ m = folium.Map(location=map_center, zoom_start=15)
 
 # Voeg energieverbruik toe aan de kaart als een heatmap
 heat_data = [[row['Latitude'], row['Longitude'], row['Totaal verbruik per week (kWh)']] for index, row in df1_grouped.iterrows()]
-HeatMap(heat_data, radius=28, max_zoom=13).add_to(m)
+HeatMap(heat_data, radius=24, max_zoom=13).add_to(m)
 
 # Toon de heatmap in Streamlit
 st_folium(m, width=700, height=500)
