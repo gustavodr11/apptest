@@ -1,122 +1,53 @@
-
-
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
+from datetime import datetime
 
-# Titel van de app
-st.title("Interactieve Plotly Grafieken met Streamlit")
+# Bereken het totale aantal vliegtuigen op elke luchthaven gedurende een maand
+def calculate_aircraft_on_airport(selected_month):
+    # Zorg ervoor dat de STD-kolom correct is geformatteerd als datetime
+    df['STD'] = pd.to_datetime(df['STD'], errors='coerce')
+    
+    # Controleer of selected_month een pd.Timestamp object is
+    if not isinstance(selected_month, pd.Timestamp):
+        selected_month = pd.to_datetime(selected_month)
+    
+    # Filter de dataframe op vluchten binnen de geselecteerde maand
+    month_filter = df['STD'].dt.to_period("M") == selected_month.to_period("M")
+    month_data = df[month_filter]
+    
+    # Bereken de totale aankomsten en vertrekken per luchthaven gedurende de maand
+    landed = month_data[month_data['LSV'] == 'L'].groupby('City')['TAR'].nunique().reset_index(name='Aantal_vliegtuigen')
+    departed = month_data[month_data['LSV'] == 'S'].groupby('City')['TAR'].nunique().reset_index(name='Aantal_vertrokken')
+    
+    # Bereken het netto aantal vliegtuigen dat per luchthaven aanwezig was
+    airport_traffic = pd.merge(landed, departed, on='City', how='outer').fillna(0)
+    airport_traffic['Aantal_vliegtuigen'] = airport_traffic['Aantal_vliegtuigen'] - airport_traffic['Aantal_vertrokken']
 
-# Beschrijving
-st.markdown("""
-Deze applicatie genereert willekeurige data en toont interactieve Plotly-grafieken.
-Gebruik de dropdown-menu's om de weergegeven variabelen te selecteren.
-""")
+    return airport_traffic
 
-# Sidebar voor instellingen
-st.sidebar.header("Instellingen")
+# Streamlit interface
+st.subheader("Drukte op luchthavens in de tijd")
 
-# Opties voor datageneratie
-num_points = st.sidebar.slider("Aantal datapunten", min_value=50, max_value=1000, value=200, step=50)
+# Slider voor maandselectie
+selected_month = st.slider("Selecteer een maand:", 
+                           min_value=datetime(2019, 1, 1), 
+                           max_value=datetime(2020, 12, 31), 
+                           value=datetime(2019, 7, 1), 
+                           format="YYYY-MM")
 
-# Genereren van willekeurige data
-np.random.seed(42)  # Voor reproduceerbaarheid
-df = pd.DataFrame({
-    'Datum': pd.date_range(start='2023-01-01', periods=num_points, freq='D'),
-    'Categorie': np.random.choice(['A', 'B', 'C', 'D'], size=num_points),
-    'Waarde 1': np.random.randn(num_points).cumsum(),
-    'Waarde 2': np.random.randn(num_points).cumsum(),
-    'Waarde 3': np.random.randn(num_points).cumsum()
-})
+# Bereken het aantal vliegtuigen voor de geselecteerde maand
+airport_traffic = calculate_aircraft_on_airport(selected_month)
 
-# Toon de dataset
-st.subheader("Willekeurige Dataset")
-st.dataframe(df)
-
-# Dropdown-menu voor het selecteren van de y-as variabele
-y_axis = st.selectbox(
-    "Selecteer de variabele voor de Y-as",
-    options=['Waarde 1', 'Waarde 2', 'Waarde 3'],
-    index=0
+# Bar plot weergeven
+fig = px.bar(
+    airport_traffic,
+    x='City',
+    y='Aantal_vliegtuigen',
+    labels={'City': 'Luchthaven', 'Aantal_vliegtuigen': 'Aantal Vliegtuigen'},
+    color='Aantal_vliegtuigen',
+    color_continuous_scale=px.colors.sequential.Viridis
 )
 
-# Dropdown-menu voor het selecteren van de categoriegroep
-category = st.selectbox(
-    "Selecteer de categorie om te groeperen",
-    options=['Categorie', None],
-    index=0
-)
+st.plotly_chart(fig)
 
-# Maak een Plotly-lijn grafiek
-if category:
-    fig = px.line(
-        df, 
-        x='Datum', 
-        y=y_axis, 
-        color=category,
-        title=f"Lijn Grafiek van {y_axis} per {category}"
-    )
-else:
-    fig = px.line(
-        df, 
-        x='Datum', 
-        y=y_axis, 
-        title=f"Lijn Grafiek van {y_axis}"
-    )
-
-# Interactieve dropdown binnen de Plotly-grafiek
-fig.update_layout(
-    updatemenus=[
-        dict(
-            active=0,
-            buttons=list([
-                dict(label="Lijn",
-                     method="restyle",
-                     args=["type", "scatter"]),
-                dict(label="Stap",
-                     method="restyle",
-                     args=["type", "step"],
-                     ),
-                dict(label="Bar",
-                     method="restyle",
-                     args=["type", "bar"])
-            ]),
-            direction="down",
-            pad={"r": 10, "t": 10},
-            showactive=True,
-            x=0.0,
-            xanchor="left",
-            y=1.15,
-            yanchor="top"
-        ),
-    ]
-)
-
-# Toon de grafiek
-st.plotly_chart(fig, use_container_width=True)
-
-# Extra: Staafdiagram als tweede plot
-st.subheader("Staafdiagram van Gemiddelde Waarden per Categorie")
-
-# Bereken gemiddelde per categorie
-df_avg = df.groupby('Categorie')[['Waarde 1', 'Waarde 2', 'Waarde 3']].mean().reset_index()
-
-# Dropdown-menu voor het selecteren van de gemiddelde variabele
-avg_variable = st.selectbox(
-    "Selecteer de variabele voor de gemiddelde staafdiagram",
-    options=['Waarde 1', 'Waarde 2', 'Waarde 3'],
-    index=0
-)
-
-# Maak een Plotly staafdiagram
-bar_fig = px.bar(
-    df_avg,
-    x='Categorie',
-    y=avg_variable,
-    title=f"Gemiddelde van {avg_variable} per Categorie",
-    labels={avg_variable: f"Gemiddelde {avg_variable}"}
-)
-
-# Toon de staafdiagram
-st.plotly_chart(bar_fig, use_container_width=True)
